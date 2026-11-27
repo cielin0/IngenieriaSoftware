@@ -1,0 +1,42 @@
+[
+  {
+    "id": "sample-1",
+    "type": "Derrumbe en ruta",
+    "description": "Se reporta caída de tierra y bloqueo parcial en la ruta hacia Puerto Montt.",
+    "lat": -41.4722,
+    "lng": -72.9438,
+    "time": "2026-09-29T09:10:00-03:00"
+  },
+  {
+    "id": "sample-2",
+    "type": "Problema de conectividad",
+    "description": "Sin cobertura móvil en la zona de Chiloé durante más de 2 horas.",
+    "lat": -42.4746,
+    "lng": -73.1162,
+    "time": "2026-09-29T11:35:00-03:00"
+  },
+  {
+    "id": "sample-3",
+    "type": "Emergencia climática",
+    "description": "Fenómeno meteorológico intenso con lluvias torrenciales y riesgo de desborde.",
+    "lat": -41.6735,
+    "lng": -73.0341,
+    "time": "2026-09-29T13:05:00-03:00"
+  },
+  {
+    "id": "incident-1790729516358-7d8f7bb1f9072",
+    "type": "Accidente vial",
+    "description": "Prueba de creación",
+    "lat": -41.5,
+    "lng": -72.9,
+    "time": "2026-09-30T00:51:56.358Z"
+  },
+  {
+    "id": "incident-1790730581080-6a47da64424dc8",
+    "type": "Otra",
+    "description": "le nigga tonto",
+    "lat": -41.39547,
+    "lng": -72.91582,
+    "time": "2026-09-30T01:09:41.080Z"
+  }
+]

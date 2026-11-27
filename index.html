@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Los Lagos | Centro de incidencias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=5" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Inicio - Centro de incidencias Los Lagos">
+        <span class="brand-mark" aria-hidden="true">⌖</span>
+        <span><small>CHILE · COMUNIDADES</small><strong>Centro de incidencias</strong></span>
+      </a>
+      <button id="menuToggle" class="icon-button mobile-menu" type="button" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <nav id="topMenu" class="top-menu" aria-label="Menú principal">
+        <span id="userLabel" class="user-label">Visitante</span>
+        <a id="adminPanelLink" class="quiet-button hidden" href="/administracion/">Panel de administración</a>
+        <button id="notificationsBtn" class="quiet-button hidden" type="button">Notificaciones <span id="notificationCount" class="notification-count">0</span></button>
+        <button id="authBtn" class="quiet-button" type="button">Ingresar</button>
+        <button id="openReportBtn" class="primary-button" type="button">＋ Reportar incidencia</button>
+      </nav>
+    </header>
+
+    <main class="page-shell">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">INFORMACIÓN COLABORATIVA EN TIEMPO REAL</p>
+          <h1>Incidencias en tu comunidad</h1>
+          <p class="intro-copy">Consulta reportes en el mapa, confírmalos o desmiéntelos y ayuda a mantener informada a tu comunidad.</p>
+        </div>
+        <div class="live-indicator"><span></span> Mapa actualizado</div>
+      </section>
+
+      <section id="dashboard" class="dashboard hidden" aria-label="Estadísticas de incidencias">
+        <article><span>Total de reportes</span><strong id="statTotal">0</strong></article>
+        <article><span>Abiertos</span><strong id="statOpen">0</strong></article>
+        <article><span>En proceso</span><strong id="statProgress">0</strong></article>
+        <article><span>Resueltos</span><strong id="statResolved">0</strong></article>
+        <article class="urgent-stat"><span>Prioridad alta</span><strong id="statPriority">0</strong></article>
+        <article><span>Confirmados</span><strong id="statConfirmed">0</strong></article>
+        <article><span>Ocultos por denuncias</span><strong id="statHidden">0</strong></article>
+      </section>
+      <section id="userManagement" class="user-management hidden">
+        <div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Gestión de usuarios</h2></div>
+        <div id="userList" class="user-list"></div>
+      </section>
+
+      <section class="toolbar" aria-label="Buscar y filtrar incidencias">
+        <label class="select-control community-control"><span class="sr-only">Comunidad</span>
+          <select id="communityFilter" aria-label="Comunidad"></select>
+        </label>
+        <label class="search-control"><span aria-hidden="true">⌕</span><input id="incidentSearch" type="search" placeholder="Buscar tipo o descripción..." aria-label="Buscar incidencias" /></label>
+        <label class="select-control"><span class="sr-only">Filtrar estado</span>
+          <select id="statusFilter" aria-label="Filtrar por estado">
+            <option value="Todos">Todos los estados</option><option value="abierto">Abierto</option><option value="en proceso">En proceso</option><option value="resuelto">Resuelto</option>
+          </select>
+        </label>
+        <label class="select-control"><span class="sr-only">Filtrar por veracidad</span>
+          <select id="veracityFilter" aria-label="Filtrar por veracidad">
+            <option value="todos">Todos (veracidad)</option><option value="confirmados">Solo confirmados</option><option value="por_confirmar">Solo por confirmar</option><option value="dudosos">Solo dudosos / falsos</option>
+          </select>
+        </label>
+        <label class="select-control"><span class="sr-only">Ordenar</span>
+          <select id="sortOrder" aria-label="Ordenar reportes">
+            <option value="recientes">Más recientes primero</option><option value="antiguos">Más antiguos primero</option><option value="confirmados">Más confirmados primero</option>
+          </select>
+        </label>
+        <label id="includeInactiveWrap" class="check-control hidden"><input id="includeInactive" type="checkbox" /> Incluir ocultos y caducados</label>
+        <div id="typeFilters" class="type-filters" role="group" aria-label="Filtrar por tipo">
+          <button class="filter-btn active" data-filter="Todos" type="button">Todos</button>
+        </div>
+      </section>
+
+      <section class="map-tools" aria-label="Herramientas del mapa">
+        <form id="locationSearchForm" class="location-search">
+          <label for="locationSearch">Buscar ubicación</label>
+          <div><input id="locationSearch" type="search" placeholder="Ej. Puerto Varas" autocomplete="off" /><button class="secondary-button" type="submit">Buscar</button></div>
+        </form>
+        <button id="locateBtn" class="secondary-button" type="button">◎ Mi ubicación</button>
+        <label class="secondary-button layer-upload" for="geoJsonInput">＋ Cargar capa GeoJSON</label>
+        <input id="geoJsonInput" class="sr-only" type="file" accept=".json,.geojson,application/geo+json,application/json" />
+      </section>
+
+      <section class="workspace">
+        <aside class="incident-panel">
+          <div class="panel-heading"><div><p class="eyebrow">SEGUIMIENTO</p><h2>Reportes</h2></div><span id="incidentCount" class="count-badge">0</span></div>
+          <div id="incidentList" class="incident-list" aria-live="polite"></div>
+        </aside>
+        <div class="map-frame"><div id="map" role="application" aria-label="Mapa interactivo de incidencias en Chile"></div><p id="mapNotice" class="map-notice hidden" role="status" aria-live="polite"></p><div id="mapSelectionControls" class="map-selection-controls hidden" role="status" aria-live="polite"><span>Haz clic en el mapa para elegir la ubicación del reporte.</span><button id="cancelMapSelection" class="secondary-button" type="button">Cancelar</button></div><div id="mapLegend" class="map-legend"></div></div>
+      </section>
+      <p id="appMessage" class="app-message" role="status" aria-live="polite"></p>
+    </main>
+
+    <dialog id="authDialog" class="app-dialog">
+      <form id="authForm" class="dialog-card">
+        <div class="dialog-heading"><div><p class="eyebrow">ACCESO A LA PLATAFORMA</p><h2 id="authTitle">Ingresar</h2></div><button class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <label>Correo electrónico<input id="authEmail" type="email" autocomplete="email" required /></label>
+        <label id="nameField" class="hidden">Nombre completo<input id="authName" type="text" autocomplete="name" minlength="2" maxlength="80" /></label>
+        <label id="communityField" class="hidden">Tu comunidad (opcional)<select id="authCommunity"><option value="">Sin elegir</option></select></label>
+        <label>Contraseña<input id="authPassword" type="password" autocomplete="current-password" required /></label>
+        <p id="authError" class="form-error" role="alert"></p>
+        <button class="primary-button full-button" type="submit">Continuar</button>
+        <button id="authModeToggle" class="text-button" type="button">¿No tienes cuenta? Regístrate</button>
+        <button id="forgotPasswordBtn" class="text-button" type="button">¿Olvidaste tu contraseña?</button>
+      </form>
+    </dialog>
+
+    <dialog id="reportDialog" class="app-dialog">
+      <form id="reportForm" class="dialog-card">
+        <div class="dialog-heading"><div><p class="eyebrow">REPORTE COMUNITARIO</p><h2 id="reportTitle">Nueva incidencia</h2></div><button id="closeReportBtn" class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <label>Tipo de incidencia<select id="incidentType" required><option value="">Selecciona un tipo</option></select></label>
+        <label>Descripción<textarea id="incidentDescription" rows="4" maxlength="2000" placeholder="Describe lo que está ocurriendo..." required></textarea></label>
+        <div class="coordinate-box"><strong>Ubicación del reporte</strong><p id="locationLabel">Busca un lugar o selecciona un punto en el mapa.</p><div class="coordinates"><span>Latitud <b id="latValue">—</b></span><span>Longitud <b id="lngValue">—</b></span></div><button id="selectLocationBtn" class="secondary-button" type="button">Seleccionar en el mapa</button><small>También puedes elegir tu ubicación GPS.</small></div>
+        <small class="form-hint">Solo se aceptan ubicaciones dentro de Chile.</small>
+        <input id="latInput" type="hidden" /><input id="lngInput" type="hidden" /><input id="editIncidentId" type="hidden" />
+        <p id="reportError" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button id="cancelReportBtn" class="secondary-button" type="button">Cancelar</button><button class="primary-button" type="submit">Guardar reporte</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="resetRequestDialog" class="app-dialog">
+      <form id="resetRequestForm" class="dialog-card">
+        <div class="dialog-heading"><div><p class="eyebrow">RECUPERAR ACCESO</p><h2>Restablecer contraseña</h2></div><button class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <label>Correo electrónico<input id="resetEmail" type="email" autocomplete="email" required /></label>
+        <p class="form-hint">Si el correo está registrado, recibirás un enlace válido por 30 minutos.</p>
+        <p id="resetRequestMessage" class="form-hint" role="status"></p>
+        <button class="primary-button full-button" type="submit">Enviar enlace</button>
+      </form>
+    </dialog>
+
+    <dialog id="resetConfirmDialog" class="app-dialog">
+      <form id="resetConfirmForm" class="dialog-card">
+        <div class="dialog-heading"><div><p class="eyebrow">RECUPERAR ACCESO</p><h2>Nueva contraseña</h2></div><button class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <label>Nueva contraseña<input id="resetPassword" type="password" autocomplete="new-password" required /></label>
+        <label>Repite la contraseña<input id="resetPasswordRepeat" type="password" autocomplete="new-password" required /></label>
+        <p class="form-hint">Al cambiarla se cerrarán tus otras sesiones.</p>
+        <p id="resetConfirmError" class="form-error" role="alert"></p>
+        <button class="primary-button full-button" type="submit">Guardar contraseña</button>
+      </form>
+    </dialog>
+
+    <dialog id="duplicateDialog" class="app-dialog">
+      <section class="dialog-card">
+        <div class="dialog-heading"><div><p class="eyebrow">POSIBLE DUPLICADO</p><h2>¿Es el mismo incidente?</h2></div><button class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <p class="form-hint">Ya hay un reporte parecido cerca de tu ubicación. Si es el mismo, confírmalo en lugar de crear otro.</p>
+        <div id="duplicateList"></div>
+        <div class="dialog-actions"><button id="duplicateCreateBtn" class="secondary-button" type="button">No es el mismo, crear el mío</button></div>
+      </section>
+    </dialog>
+
+    <dialog id="flagDialog" class="app-dialog">
+      <form id="flagForm" class="dialog-card">
+        <div class="dialog-heading"><div><p class="eyebrow">MODERACIÓN</p><h2>Reportar este incidente</h2></div><button class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div>
+        <p class="form-hint">Úsalo para bromas, spam o información falsa. Varias denuncias de personas distintas lo ocultan hasta que un operador lo revise.</p>
+        <label>Motivo<select id="flagReason" required></select></label>
+        <input id="flagIncidentId" type="hidden" />
+        <p id="flagError" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button class="secondary-button close-dialog" type="button">Cancelar</button><button class="primary-button" type="submit">Enviar denuncia</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="notificationsDialog" class="app-dialog">
+      <section class="dialog-card"><div class="dialog-heading"><div><p class="eyebrow">ACTUALIZACIONES</p><h2>Notificaciones</h2></div><button class="icon-button close-dialog" type="button" aria-label="Cerrar">×</button></div><div id="notificationList"></div></section>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="{% static 'map.js' %}?v=7"></script>
+    <script src="{% static 'app.js' %}?v=9"></script>
+  </body>
+</html>

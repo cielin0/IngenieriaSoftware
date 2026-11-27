@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administración | Centro de incidencias</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=5" />
+    <link rel="stylesheet" href="{% static 'admin-panel.css' %}?v=1" />
+  </head>
+  <body class="admin-page">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Volver al centro de incidencias">
+        <span class="brand-mark" aria-hidden="true">⌖</span>
+        <span><small>CHILE · COMUNIDADES</small><strong>Panel administrativo</strong></span>
+      </a>
+      <nav class="top-menu admin-top-menu">
+        <span id="adminUserLabel" class="user-label">Verificando acceso…</span>
+        <a class="quiet-button" href="/">Ir al sitio público</a>
+        <button id="adminLogoutBtn" class="quiet-button" type="button">Cerrar sesión</button>
+      </nav>
+    </header>
+
+    <main class="admin-shell">
+      <section id="accessDenied" class="access-denied hidden" aria-live="polite">
+        <p class="eyebrow">ACCESO RESTRINGIDO</p>
+        <h1>Solo los administradores pueden usar este panel</h1>
+        <p>Inicia sesión con una cuenta de administrador desde el sitio principal.</p>
+        <a class="primary-button" href="/">Ir al inicio</a>
+      </section>
+
+      <div id="adminContent" class="hidden">
+        <div class="admin-heading">
+          <div>
+            <p class="eyebrow">GESTIÓN Y VERIFICACIÓN</p>
+            <h1>Incidencias</h1>
+          </div>
+          <button id="refreshAdminBtn" class="secondary-button" type="button">↻ Actualizar</button>
+        </div>
+
+        <section id="adminStats" class="admin-stats" aria-label="Resumen administrativo"></section>
+
+        <section class="admin-toolbar" aria-label="Filtros del panel">
+          <label>Buscar<input id="adminSearch" type="search" placeholder="Tipo o descripción..." /></label>
+          <label>Estado
+            <select id="adminStatusFilter">
+              <option value="todos">Todos</option>
+              <option value="abierto">Abierto</option>
+              <option value="en proceso">En proceso</option>
+              <option value="resuelto">Resuelto</option>
+            </select>
+          </label>
+          <label>Veracidad
+            <select id="adminVeracityFilter">
+              <option value="todos">Todas</option>
+              <option value="sin_verificar">Sin verificar</option>
+              <option value="confirmado_comunidad">Confirmada por comunidad</option>
+              <option value="verificado">Verificada</option>
+              <option value="probablemente_falso">Probablemente falsa</option>
+              <option value="falso">Falsa</option>
+              <option value="ocultas">Ocultas</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="admin-layout">
+          <div>
+            <div class="section-heading"><h2>Reportes</h2><span id="adminIncidentCount">0</span></div>
+            <div id="adminIncidentList" class="admin-incident-list" aria-live="polite"></div>
+          </div>
+          <aside class="admin-users">
+            <div class="section-heading"><h2>Usuarios</h2></div>
+            <div id="adminUserList"></div>
+          </aside>
+        </section>
+      </div>
+      <p id="adminMessage" class="admin-message" role="status" aria-live="polite"></p>
+    </main>
+
+    <script src="{% static 'admin-panel.js' %}?v=1"></script>
+  </body>
+</html>
